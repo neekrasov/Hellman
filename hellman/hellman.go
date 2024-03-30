@@ -12,13 +12,12 @@ import (
 
 const generator = 2
 
-// Генерация публичного ключа -  w^x mod n = generator^privint mod prime
 type Hellman struct {
-	privateKey string   // секретный ключ который используется для DES и иммитовставок.
-	publicKey  *big.Int // публичный ключ - для передачи на клиент/сервер для преобразования в приватный ключ.
-	privint    int64    // число с помощью которого генерируем public key
-	generator  int64    // основание степени - 2, работаем в поле (0,1).
-	prime      *big.Int //
+	privateKey string
+	publicKey  *big.Int
+	privint    int64
+	generator  int64
+	prime      *big.Int
 }
 
 func New() (*Hellman, error) {
@@ -93,14 +92,12 @@ func GenRandom(bits int) (int64, error) {
 		randBytes++ // Добавляем дополнительный байт, если количество бит не делится нацело на 8.
 	}
 
-	// Генерируем случайные байты.
 	b := make([]byte, randBytes)
 	_, err := rand.Read(b)
 	if err != nil {
 		return 0, err
 	}
 
-	// Преобразуем байты в целое число.
 	randInt := int64(0)
 	for _, v := range b {
 		randInt = (randInt << 8) | int64(v)
