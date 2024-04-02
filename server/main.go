@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"math/big"
@@ -118,13 +119,21 @@ func handleConnection(ctx context.Context, conn net.Conn) {
 				log.Printf("failed to decrypt message: %s, for client %s", err.Error(), clientAddr)
 				continue
 			}
+			log.Printf("client %s received message: %s", clientAddr, receivedMsg)
 
-			_, err = conn.Write([]byte("hello, you received: " + string(receivedMsg) + ";"))
+			encryptedMessage, err := hellman.DES3Encode(fmt.Sprintf("received: %s", receivedMsg), privateKey)
 			if err != nil {
-				log.Printf("error writing response: %s, for client %s", err.Error(), clientAddr)
-				return
+				log.Fatalf("failed to encrypt message: %s", err.Error())
 			}
 
+			HMAC, err := hellman.HashSHA256WithHMAC(encryptedMessage, privateKey)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if _, err = conn.Write([]byte(HMAC + encryptedMessage + ";")); err != nil {
+				log.Fatalf("error sending message to server: %s", err.Error())
+			}
 		}
 	}
 }

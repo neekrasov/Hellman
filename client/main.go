@@ -80,10 +80,29 @@ func main() {
 			log.Fatalf("error sending message to server: %s", err.Error())
 		}
 
-		response, err := bufio.NewReader(conn).ReadString(';')
+		response, err := bufio.NewReader(conn).ReadBytes(';')
 		if err != nil {
-			log.Fatalf("error reading response from server: %s", err.Error())
+			log.Println(err.Error())
+			return
 		}
-		log.Printf("Response from server: '%s'", strings.Trim(response, ";"))
+
+		receivedHMAC := strings.TrimSpace(string(response[:64]))
+		receivedPayload := string(response[64 : len(response)-1])
+
+		ok, err := hellman.VerifyHMAC(receivedHMAC, privateKey, receivedPayload)
+		if err != nil {
+			log.Printf("error verified message from server: %s", err.Error())
+			continue
+		}
+
+		if ok {
+			receivedMsg, err := hellman.DES3Decode(receivedPayload, privateKey)
+			if err != nil {
+				log.Printf("failed to decrypt message: %s", err.Error())
+				continue
+			}
+
+			log.Printf("server response: %s", receivedMsg)
+		}
 	}
 }
